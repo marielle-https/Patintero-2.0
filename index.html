@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pinoy Game: Patintero</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #2c3e50;
+      --panel: #34495e;
+      --accent: #0f3460;
+      --glass: rgba(0, 0, 0, 0.45);
+      --pixel-size: 2;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: "Press Start 2P", system-ui, sans-serif;
+      background: var(--bg);
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden; /* Prevent scrolling on mobile */
+    }
+
+    /* 1) Make the wrapper size itself by viewport, but don't squeeze it */
+.game-wrap{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  /* key change ↓ */
+  align-items: stretch;          /* was center; lets children (stage) take full width */
+  width: min(100vw, 500px);
+  height: min(100vh, 650px);
+}
+
+/* 2) Ensure the stage really fills the width */
+.stage{
+  position: relative;
+  width: 100%;                   /* already there, keep it */
+  flex: 1 1 auto;
+  /* optional guards ↓ */
+  min-width: 320px;              /* prevents ultra-thin collapse on weird flex calcs */
+  min-height: 320px;
+}
+
+
+    h1 {
+      margin: 12px 0 0 0;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Score */
+    .score-board {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      background: var(--glass);
+      padding: 8px 12px;
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      z-index: 15;
+    }
+
+    /* Top UI text (name + level) */
+    .top-ui {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 15;
+      background: var(--glass);
+      padding: 8px 12px;
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      text-align: right;
+    }
+
+    /* CHARACTER SPRITE SYSTEM */
+    .Character {
+      width: calc(32px * var(--pixel-size));
+      height: calc(32px * var(--pixel-size));
+      overflow: hidden;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .Character img { display: block; background: transparent; }
+
+    .Character_spritesheet {
+      animation: moveSpritesheet 1s steps(4) infinite;
+      width: calc(128px * var(--pixel-size));
+      position: absolute; left: 0; top: 0;
+    }
+
+    .Character_shadow {
+      position: absolute;
+      width: calc(32px * var(--pixel-size));
+      height: calc(32px * var(--pixel-size));
+      left: 0;
+      top: 0;
+      opacity: 0.9;
+    }
+
+    .pixelart { image-rendering: pixelated; }
+
+    .face-down  { top: 0; }
+.face-left  { top: calc(-32px * var(--pixel-size)); }
+.face-right { top: calc(-64px * var(--pixel-size)); }
+.face-up    { top: calc(-96px * var(--pixel-size)); }
+
+
+    @keyframes moveSpritesheet {
+      from { transform: translate3d(0px,0,0) } 
+      to   { transform: translate3d(-100%,0,0) }
+    }
+
+    /* Overlays */
+    .overlay-start {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: url("patintero-bg.png") center/cover no-repeat; /* start screen image */
+      z-index: 99;
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+    }
+
+    .overlay-card {
+      background: rgba(0,0,0,0.6);
+      padding: 20px 24px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+      width: min(92%, 560px);
+    }
+    .overlay-card h2 {
+      font-size: 1.6rem;
+      margin: 0 0 12px;
+      color: #ffeb3b;
+      text-shadow: 0 0 8px rgba(255,255,0,0.8);
+    }
+    .overlay-card p {
+      font-size: 0.8rem;
+      line-height: 1.6;
+      margin: 0 0 18px;
+    }
+    .overlay-card button, .overlay-card input {
+      font-family: "Press Start 2P", system-ui, sans-serif;
+    }
+    .overlay-card button {
+      display: inline-block;
+      margin: 8px 6px 0;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      background: #2ecc71;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      font-size: 1rem;
+    }
+    .overlay-card button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.4); }
+    .overlay-card input[type="text"] {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 2px solid #fff3;
+      background: #0006;
+      color: #fff;
+      font-size: 0.9rem;
+      box-sizing: border-box;
+    }
+
+    /* Mobile joystick */
+    #joystick {
+      display: none; /* shown only on touch */
+      position: absolute;
+      left: 18px;
+      bottom: 18px;
+      width: 120px;
+      height: 120px;
+      background: rgba(0,0,0,0.35);
+      border: 2px solid #fff3;
+      border-radius: 50%;
+      z-index: 20;
+      touch-action: none;
+    }
+    #knob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.6);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    /* Level complete toast */
+    #levelCompleteOverlay {
+      position: absolute;
+      left: 50%; top: 12%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      padding: 10px 16px;
+      border-radius: 10px;
+      display: none;
+      z-index: 95;
+      border: 2px solid #fff3;
+    }
+
+    /* Media queries for mobile display */
+    @media (max-width: 768px) {
+      .game-wrap {
+        width: 100vw; /* Take full viewport width */
+        height: 100vh; /* Take full viewport height */
+        border-radius: 0; /* No border radius in full screen */
+        margin: 0;
+      }
+      canvas { border-radius: 0; }
+      .score-board {
+        font-size: 1.2rem;
+        padding: 10px 15px;
+      }
+      .overlay-start { padding: 0; }
+      .overlay-card { padding-bottom: 30px; }
+      .message-box { font-size: 1.2rem; padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-wrap" id="gameWrap">
+    <div class="stage" id="stage">
+      <div class="score-board">Score: <span id="scoreValue">0</span></div>
+      <div class="top-ui"><div id="playerInfo">Player<br>Level 1/5</div></div>
+
+      <!-- Start Overlay (visible initially) -->
+      <div id="startOverlay" class="overlay-start">
+        <div class="overlay-card">
+          <h2>Patintero</h2>
+          <p>🏃 Relive a Filipino childhood classic! Cross the lines, dodge the taggers.<br><br>
+            👉 <b>ARROW / WASD</b> on desktop • <b>Virtual Joystick</b> on mobile</p>
+          <button id="startBtn">Start Game</button>
+          <button id="leaderboardBtn">🏆 Leaderboard</button>
+        </div>
+      </div>
+
+      <!-- Toast for level complete -->
+      <div id="levelCompleteOverlay"><h3 id="completeMessage">Level Complete!</h3></div>
+
+      <!-- Mobile joystick -->
+      <div id="joystick"><div id="knob"></div></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const gameWrap = document.getElementById("gameWrap");
+      const stage = document.getElementById("stage");
+      const startOverlay = document.getElementById("startOverlay");
+      const startBtn = document.getElementById("startBtn");
+      const leaderboardBtn = document.getElementById("leaderboardBtn");
+      const playerInfoBox = document.getElementById("playerInfo");
+
+      const levelToast = document.getElementById("levelCompleteOverlay");
+      const toastMsg = document.getElementById("completeMessage");
+
+      // State
+      let playerName = "";
+      let currentLevel = 1;
+      const maxLevel = 5;
+      let gameEnded = false;
+      let blockers = [];
+      let linesY = [];
+
+      // Dimensions
+      let screenW = stage.clientWidth;
+      let screenH = stage.clientHeight;
+
+      // Player element & pos
+      let player, x, y, PLAYER_SIZE = 64;
+
+      // Joystick state
+      let joystickActive = false, joystickCenterX = 0, joystickCenterY = 0, currentDx = 0, currentDy = 0, joystickInterval = null;
+      const joystick = document.getElementById('joystick');
+      const knob = document.getElementById('knob');
+      const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      if (isTouch) joystick.style.display = 'block';
+
+      // ---- Blocker speed tuning (gentle ramp to Level 5) ----
+      const SPEED_CONFIG = {
+        base: 2.0,   // starting speed at Level 1
+        perLevel: 0.6, // added per level (so L5 ≈ base + 4*perLevel)
+        variance: 0.4, // tiny random variation so they don’t feel identical
+        max: 5.0     // safety cap
+      };
+
+      // === Leaderboard helpers (localStorage) ===
+      function getLeaderboard() { return JSON.parse(localStorage.getItem('patinteroLeaderboard') || '[]'); }
+      function saveLeaderboard(lb) { localStorage.setItem('patinteroLeaderboard', JSON.stringify(lb)); }
+      function updatePlayerScore(name, levelsCompleted) {
+        if (!name) return;
+        const completed = Math.max(0, Math.floor(levelsCompleted));
+        let lb = getLeaderboard();
+        let existing = lb.find(p => p.name.toLowerCase() === name.toLowerCase());
+        if (existing) { if (completed > existing.levelsCompleted) existing.levelsCompleted = completed; }
+        else { lb.push({ name, levelsCompleted: completed }); }
+        lb.sort((a,b) => b.levelsCompleted - a.levelsCompleted || a.name.localeCompare(b.name));
+        saveLeaderboard(lb);
+      }
+      function showLeaderboard() {
+        const lb = getLeaderboard().slice(0, 10);
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay-card';
+        overlay.id = 'lbOverlay';
+        overlay.style.position = 'absolute';
+        overlay.style.left = '50%';
+        overlay.style.top = '50%';
+        overlay.style.transform = 'translate(-50%, -50%)';
+        overlay.style.zIndex = 120;
+        const list = lb.length ? lb.map((p,i)=>`<li>${i+1}. ${p.name} – ${p.levelsCompleted} levels</li>`).join('') : '<li>No scores yet!</li>';
+        overlay.innerHTML = `<h2>🏆 Leaderboard</h2><p>Top 10 players</p><ul style="text-align:left">${list}</ul><button id="closeLb">Close</button>`;
+        stage.appendChild(overlay);
+        overlay.querySelector('#closeLb').addEventListener('click', ()=> overlay.remove());
+      }
+      leaderboardBtn.addEventListener('click', showLeaderboard);
+
+      // --- Background switch helper + preload to avoid flicker ---
+      function setStageBackground(src) {
+        stage.style.background = `#223 url("${src}") center/cover no-repeat`;
+      }
+      ["patinteroground.png"].forEach(src => { const img = new Image(); img.src = src; });
+
+      // Name prompt
+      function askNameThenStart() {
+        startOverlay.style.display = 'none';
+        const o = document.createElement('div');
+        o.className = 'overlay-card';
+        o.style.position = 'absolute';
+        o.style.left = '50%';
+        o.style.top = '50%';
+        o.style.transform = 'translate(-50%, -50%)';
+        o.style.zIndex = 120;
+        o.innerHTML = `
+          <h2>Enter Player Name</h2>
+          <p>We will show it on the leaderboard.</p>
+          <input id="username" type="text" placeholder="Your name" maxlength="20" />
+          <button id="submitName">▶ START GAME</button>
+        `;
+        stage.appendChild(o);
+        const submit = o.querySelector('#submitName');
+        const input = o.querySelector('#username');
+        input.focus();
+        function start() {
+          const name = input.value.trim();
+          if (!name) { alert('Please enter a username to start!'); return; }
+          playerName = name; localStorage.setItem('patinteroPlayer', JSON.stringify({ name }));
+          o.remove();
+          initGame();
+        }
+        submit.addEventListener('click', start);
+        input.addEventListener('keypress', e => { if (e.key === 'Enter') start(); });
+      }
+      startBtn.addEventListener('click', askNameThenStart);
+
+      // Resize handling keeps things responsive
+      const resizeObserver = new ResizeObserver(()=> {
+        screenW = stage.clientWidth; screenH = stage.clientHeight;
+        // scale sprites based on viewport for laptop/desktop/tablet/phone
+        const scale = Math.max(0.6, Math.min(1.4, Math.min(screenW, screenH) / 700));
+        stage.style.setProperty('--scale', `scale(${scale})`);
+        PLAYER_SIZE = Math.round(64 * scale);
+        // recompute lines (target Ys)
+        linesY = [0.75, 0.60, 0.45, 0.30, 0.15].map(v => Math.round(screenH * v));
+      });
+      resizeObserver.observe(stage);
+
+      // === Game setup ===
+      function initGame() {
+        // Switch background the moment the game starts
+        setStageBackground("patinteroground.png");
+
+        // Ensure dims
+        screenW = stage.clientWidth; screenH = stage.clientHeight;
+        const scale = Math.max(0.6, Math.min(1.4, Math.min(screenW, screenH) / 700));
+        stage.style.setProperty('--scale', `scale(${scale})`);
+        PLAYER_SIZE = Math.round(64 * scale);
+
+        // Lines (logical bands to cross; no visible finish line)
+        linesY = [0.75, 0.60, 0.45, 0.30, 0.15].map(v => Math.round(screenH * v));
+
+        // Player
+        player = document.createElement('div');
+        player.className = 'Character';
+        x = screenW * 0.5; y = screenH - 100;
+        player.style.left = x + 'px';
+        player.style.top = y + 'px';
+        player.setAttribute('facing','down');
+        player.innerHTML = `
+          <img class="Character_shadow pixelart" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/DemoRpgCharacterShadow.png" alt="shadow" />
+          <img class="Character_spritesheet pixelart face-down" src="AjFP5.png" alt="player" />
+        `;
+        stage.appendChild(player);
+
+        // Level objects
+        createBlockersForLevel(currentLevel);
+        updatePlayerInfo();
+
+        // Input (keyboard)
+        window.addEventListener('keydown', e => {
+          if (gameEnded) return;
+          const k = e.key.toLowerCase();
+          if (k === 'arrowleft'  || k === 'a') movePlayer(-16,  0, 'face-left');
+          if (k === 'arrowright' || k === 'd') movePlayer( 16,  0, 'face-right');
+          if (k === 'arrowup'    || k === 'w') movePlayer(  0, -16, 'face-up');
+          if (k === 'arrowdown'  || k === 's') movePlayer(  0,  16, 'face-down');
+        });
+
+        // Input (joystick)
+        joystick.addEventListener('touchstart', (e) => {
+          if (gameEnded) return; e.preventDefault();
+          joystickActive = true;
+          const rect = joystick.getBoundingClientRect();
+          joystickCenterX = rect.left + rect.width/2;
+          joystickCenterY = rect.top + rect.height/2;
+          updateKnob(e.touches[0].clientX, e.touches[0].clientY);
+          startJoystickMovement();
+        }, { passive: false });
+        joystick.addEventListener('touchmove', (e) => {
+          if (!joystickActive || gameEnded) return; e.preventDefault();
+          updateKnob(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+        joystick.addEventListener('touchend', (e) => {
+          if (gameEnded) return; e.preventDefault();
+          joystickActive = false; currentDx = 0; currentDy = 0; knob.style.transform = 'translate(-50%, -50%)';
+          stopJoystickMovement();
+        }, { passive: false });
+
+        // Main tick
+        gameLoop();
+      }
+
+      function updatePlayerInfo() {
+        playerInfoBox.innerHTML = `${playerName || 'Player'}<br>Level ${currentLevel}/${maxLevel}`;
+      }
+
+      function updateKnob(tx, ty) {
+        const dx = tx - joystickCenterX; const dy = ty - joystickCenterY;
+        const dist = Math.hypot(dx, dy); const max = 30;
+        if (dist > max) {
+          const a = Math.atan2(dy, dx); const cx = Math.cos(a)*max; const cy = Math.sin(a)*max;
+          knob.style.transform = `translate(-50%, -50%) translate(${cx}px, ${cy}px)`;
+          currentDx = cx/max; currentDy = cy/max;
+        } else {
+          knob.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
+          currentDx = dx/max; currentDy = dy/max;
+        }
+      }
+      function startJoystickMovement(){ if (joystickInterval) clearInterval(joystickInterval); joystickInterval = setInterval(()=>{ if(!joystickActive||gameEnded){stopJoystickMovement();return;} moveBasedOnJoystick(); }, 120); }
+      function stopJoystickMovement(){ if (joystickInterval){ clearInterval(joystickInterval); joystickInterval=null; } }
+      function moveBasedOnJoystick(){ if(!joystickActive||gameEnded) return; const t=0.25; let dx=0,dy=0,dir='face-down'; if(Math.abs(currentDy)>Math.abs(currentDx)){ if(currentDy<-t){dy=-12;dir='face-up';} else if(currentDy>t){dy=12;dir='face-down';} } else { if(currentDx<-t){dx=-12;dir='face-left';} else if(currentDx>t){dx=12;dir='face-right';} } movePlayer(dx,dy,dir); }
+
+      function movePlayer(dx, dy, direction) {
+        if (gameEnded) return;
+        x += dx; y += dy;
+        // Bounds inside stage
+        x = Math.max(PLAYER_SIZE/2, Math.min(screenW - PLAYER_SIZE/2, x));
+        y = Math.max(PLAYER_SIZE/2, Math.min(screenH - PLAYER_SIZE/2, y));
+        const sprite = player.querySelector('.Character_spritesheet');
+        if (sprite) {
+          // Ensure we always apply the correct facing
+          sprite.className = `Character_spritesheet pixelart ${direction}`;
+        }
+        player.style.left = x + 'px';
+        player.style.top = y + 'px';
+      }
+
+      function showLevelComplete() {
+        toastMsg.textContent = `Complete: Level ${currentLevel}`;
+        levelToast.style.display = 'block';
+        setTimeout(() => {
+          levelToast.style.display = 'none';
+          currentLevel++;
+          x = screenW * 0.5; y = screenH - 100; player.style.left = x + 'px'; player.style.top = y + 'px';
+          if (currentLevel <= maxLevel) {
+            createBlockersForLevel(currentLevel);
+            updatePlayerInfo();
+            gameEnded = false;
+          } else {
+            updatePlayerScore(playerName, maxLevel);
+            showWinOverlay();
+          }
+        }, 1100);
+      }
+
+      function showWinOverlay() {
+        const w = document.createElement('div');
+        w.className = 'overlay-card';
+        w.style.position = 'absolute'; w.style.left = '50%'; w.style.top = '50%'; w.style.transform = 'translate(-50%, -50%)'; w.style.zIndex = 130;
+        w.innerHTML = `
+          <h2>🎉 YOU WIN!</h2>
+          <p>You completed all ${maxLevel} levels!</p>
+          <button id="playAgainBtn">🔁 Play Again</button>
+          <button id="viewLbWin">🏆 View Leaderboard</button>
+        `;
+        stage.appendChild(w);
+        w.querySelector('#playAgainBtn').addEventListener('click', ()=> location.reload());
+        w.querySelector('#viewLbWin').addEventListener('click', ()=>{ w.remove(); showLeaderboard(); });
+      }
+
+      function createBlockersForLevel(level) {
+        blockers.forEach(b => b.remove()); blockers = [];
+        const safeLevel = Math.max(1, Math.min(level, linesY.length));
+        for (let i = 0; i < safeLevel; i++) {
+          const blk = document.createElement('div');
+          blk.className = 'Character';
+          const spread = (i + 1) * 80;
+          let startX = (screenW * 0.5) + ((i % 2 === 0) ? -spread : spread);
+          startX = Math.max(32, Math.min(screenW - 32, startX));
+          blk.style.left = startX + 'px';
+          blk.style.top = linesY[i] + 'px';
+
+          // Level-based speed with tiny variance (gentle ramp 1→5)
+          const levelSpeed = Math.min(
+            SPEED_CONFIG.max,
+            SPEED_CONFIG.base + (Math.max(1, level) - 1) * SPEED_CONFIG.perLevel
+          );
+          const withVariance = levelSpeed + (Math.random() - 0.5) * SPEED_CONFIG.variance;
+          blk.dataset.speed = Math.max(1.2, withVariance); // prevent too low
+
+          blk.dataset.phase = Math.random() * Math.PI * 2;
+          blk.dataset.amp = 28 + (i * 6);
+
+          blk.innerHTML = `
+            <img class="Character_shadow pixelart" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/DemoRpgCharacterShadow.png" alt="shadow" />
+            <img class="Character_spritesheet pixelart face-down" src="blocker.png" alt="blocker" />
+          `;
+          stage.appendChild(blk);
+          blockers.push(blk);
+        }
+      }
+
+      // Main game tick: blockers movement, collisions, crossing detection
+      function gameLoop() {
+        const tick = () => {
+          if (gameEnded) { requestAnimationFrame(tick); return; }
+
+          // Cross check (no visible finish line; uses logical band)
+          const targetLineY = linesY[currentLevel - 1];
+          if (y <= targetLineY) { 
+            gameEnded = true; 
+            showLevelComplete(); 
+            requestAnimationFrame(tick); 
+            return; 
+          }
+
+          // Blockers
+          let tagged = false;
+          blockers.forEach((blk, index) => {
+            let bx = parseFloat(blk.style.left) || (screenW * 0.5);
+            const baseY = linesY[index] || (screenH * 0.5);
+            let phase = parseFloat(blk.dataset.phase) || 0;
+            let amp = parseFloat(blk.dataset.amp) || 40;
+            let speed = parseFloat(blk.dataset.speed) || 2.0;
+
+            const speedFactor = isTouch ? 0.6 : 1; // phones a bit slower for fairness
+            const step = Math.max(1, Math.round(speed * speedFactor)); // gentle speed
+
+            const dx = x - bx; // chase horizontally
+            if (Math.abs(dx) > step) bx += step * Math.sign(dx); else bx += dx;
+            bx = Math.max(32, Math.min(screenW - 32, bx));
+
+            phase += 0.08 + (index * 0.02);
+            let vOff = Math.sin(phase + (Date.now() / 400)) * (amp * 0.25);
+
+            const half = 16; // blocker half-size for clamp
+            let upper = screenH; let lower = 0;
+            if (index > 0) upper = linesY[index - 1];
+            if (index < linesY.length - 1) lower = linesY[index + 1];
+            const maxV = Math.min(Math.abs(baseY - upper), Math.abs(baseY - lower)) / 2 - half;
+            vOff = Math.max(-maxV, Math.min(maxV, vOff));
+            blk.dataset.phase = phase;
+
+            const by = baseY + vOff;
+            blk.style.left = bx + 'px';
+            blk.style.top = by + 'px';
+
+            // face toward player (blockers always look where they're going)
+            const dy = y - by; const adx = Math.abs(dx); const ady = Math.abs(dy);
+            const face = (ady > adx) ? (dy > 0 ? 'face-down' : 'face-up') : (dx > 0 ? 'face-right' : 'face-left');
+            const s = blk.querySelector('.Character_spritesheet');
+            if (s) s.className = `Character_spritesheet pixelart ${face}`;
+
+            // collision (simple distance threshold)
+            if (Math.abs(x - bx) < 42 && Math.abs(y - by) < 42) tagged = true;
+          });
+
+          if (tagged) {
+            gameEnded = true;
+            updatePlayerScore(playerName, Math.max(0, currentLevel - 1));
+            const over = document.createElement('div');
+            over.className = 'overlay-card';
+            over.style.position = 'absolute'; over.style.left = '50%'; over.style.top = '50%'; over.style.transform = 'translate(-50%, -50%)'; over.style.zIndex = 120;
+            over.id = 'gameOverOverlay';
+            over.innerHTML = `
+              <h2>😵 GAME OVER!</h2>
+              <p>You were tagged at Level ${currentLevel}! (Completed: ${Math.max(0, currentLevel-1)} levels)</p>
+              <button id="restartBtn">🔁 Restart</button>
+              <button id="viewLbAfter">🏆 View Leaderboard</button>
+            `;
+            stage.appendChild(over);
+            over.querySelector('#restartBtn').addEventListener('click', ()=> location.reload());
+            over.querySelector('#viewLbAfter').addEventListener('click', ()=>{ over.remove(); showLeaderboard(); });
+          }
+
+          requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+
+      // Saved name hint (optional)
+      const saved = JSON.parse(localStorage.getItem('patinteroPlayer') || 'null');
+      if (saved && saved.name) { /* could prefill later */ }
+    });
+  </script>
+</body>
+</html>
