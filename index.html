@@ -23,30 +23,25 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden; /* Prevent scrolling on mobile */
+      overflow: hidden;
     }
 
-    /* 1) Make the wrapper size itself by viewport, but don't squeeze it */
-.game-wrap{
-  position:relative;
-  display:flex;
-  flex-direction:column;
-  /* key change ↓ */
-  align-items: stretch;          /* was center; lets children (stage) take full width */
-  width: min(100vw, 500px);
-  height: min(100vh, 650px);
-}
+    .game-wrap {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      width: min(100vw, 500px);
+      height: min(100vh, 650px);
+    }
 
-/* 2) Ensure the stage really fills the width */
-.stage{
-  position: relative;
-  width: 100%;                   /* already there, keep it */
-  flex: 1 1 auto;
-  /* optional guards ↓ */
-  min-width: 320px;              /* prevents ultra-thin collapse on weird flex calcs */
-  min-height: 320px;
-}
-
+    .stage {
+      position: relative;
+      width: 100%;
+      flex: 1 1 auto;
+      min-width: 320px;
+      min-height: 320px;
+    }
 
     h1 {
       margin: 12px 0 0 0;
@@ -54,7 +49,6 @@
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
     }
 
-    /* Score */
     .score-board {
       position: absolute;
       top: 14px;
@@ -69,7 +63,6 @@
       z-index: 15;
     }
 
-    /* Top UI text (name + level) */
     .top-ui {
       position: absolute;
       top: 14px;
@@ -83,7 +76,6 @@
       text-align: right;
     }
 
-    /* CHARACTER SPRITE SYSTEM */
     .Character {
       width: calc(32px * var(--pixel-size));
       height: calc(32px * var(--pixel-size));
@@ -112,24 +104,22 @@
     .pixelart { image-rendering: pixelated; }
 
     .face-down  { top: 0; }
-.face-left  { top: calc(-32px * var(--pixel-size)); }
-.face-right { top: calc(-64px * var(--pixel-size)); }
-.face-up    { top: calc(-96px * var(--pixel-size)); }
-
+    .face-left  { top: calc(-32px * var(--pixel-size)); }
+    .face-right { top: calc(-64px * var(--pixel-size)); }
+    .face-up    { top: calc(-96px * var(--pixel-size)); }
 
     @keyframes moveSpritesheet {
       from { transform: translate3d(0px,0,0) } 
       to   { transform: translate3d(-100%,0,0) }
     }
 
-    /* Overlays */
     .overlay-start {
       position: absolute;
       inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: url("patintero-bg.png") center/cover no-repeat; /* start screen image */
+      background: url("patintero-bg.png") center/cover no-repeat;
       z-index: 99;
       color: #fff;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
@@ -170,7 +160,6 @@
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       font-size: 1rem;
     }
-    .overlay-card button:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.4); }
     .overlay-card input[type="text"] {
       width: 100%;
       padding: 12px 14px;
@@ -182,9 +171,8 @@
       box-sizing: border-box;
     }
 
-    /* Mobile joystick */
     #joystick {
-      display: none; /* shown only on touch */
+      display: none;
       position: absolute;
       left: 18px;
       bottom: 18px;
@@ -208,7 +196,6 @@
       pointer-events: none;
     }
 
-    /* Level complete toast */
     #levelCompleteOverlay {
       position: absolute;
       left: 50%; top: 12%; transform: translateX(-50%);
@@ -220,19 +207,10 @@
       border: 2px solid #fff3;
     }
 
-    /* Media queries for mobile display */
     @media (max-width: 768px) {
-      .game-wrap {
-        width: 100vw; /* Take full viewport width */
-        height: 100vh; /* Take full viewport height */
-        border-radius: 0; /* No border radius in full screen */
-        margin: 0;
-      }
+      .game-wrap { width: 100vw; height: 100vh; border-radius: 0; margin: 0; }
       canvas { border-radius: 0; }
-      .score-board {
-        font-size: 1.2rem;
-        padding: 10px 15px;
-      }
+      .score-board { font-size: 1.2rem; padding: 10px 15px; }
       .overlay-start { padding: 0; }
       .overlay-card { padding-bottom: 30px; }
       .message-box { font-size: 1.2rem; padding: 20px; }
@@ -245,7 +223,6 @@
       <div class="score-board">Score: <span id="scoreValue">0</span></div>
       <div class="top-ui"><div id="playerInfo">Player<br>Level 1/5</div></div>
 
-      <!-- Start Overlay (visible initially) -->
       <div id="startOverlay" class="overlay-start">
         <div class="overlay-card">
           <h2>Patintero</h2>
@@ -256,10 +233,7 @@
         </div>
       </div>
 
-      <!-- Toast for level complete -->
       <div id="levelCompleteOverlay"><h3 id="completeMessage">Level Complete!</h3></div>
-
-      <!-- Mobile joystick -->
       <div id="joystick"><div id="knob"></div></div>
     </div>
   </div>
@@ -272,11 +246,9 @@
       const startBtn = document.getElementById("startBtn");
       const leaderboardBtn = document.getElementById("leaderboardBtn");
       const playerInfoBox = document.getElementById("playerInfo");
-
       const levelToast = document.getElementById("levelCompleteOverlay");
       const toastMsg = document.getElementById("completeMessage");
 
-      // State
       let playerName = "";
       let currentLevel = 1;
       const maxLevel = 5;
@@ -284,29 +256,18 @@
       let blockers = [];
       let linesY = [];
 
-      // Dimensions
       let screenW = stage.clientWidth;
       let screenH = stage.clientHeight;
-
-      // Player element & pos
       let player, x, y, PLAYER_SIZE = 64;
 
-      // Joystick state
       let joystickActive = false, joystickCenterX = 0, joystickCenterY = 0, currentDx = 0, currentDy = 0, joystickInterval = null;
       const joystick = document.getElementById('joystick');
       const knob = document.getElementById('knob');
       const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       if (isTouch) joystick.style.display = 'block';
 
-      // ---- Blocker speed tuning (gentle ramp to Level 5) ----
-      const SPEED_CONFIG = {
-        base: 2.0,   // starting speed at Level 1
-        perLevel: 0.6, // added per level (so L5 ≈ base + 4*perLevel)
-        variance: 0.4, // tiny random variation so they don’t feel identical
-        max: 5.0     // safety cap
-      };
+      const SPEED_CONFIG = { base: 2.0, perLevel: 0.6, variance: 0.4, max: 5.0 };
 
-      // === Leaderboard helpers (localStorage) ===
       function getLeaderboard() { return JSON.parse(localStorage.getItem('patinteroLeaderboard') || '[]'); }
       function saveLeaderboard(lb) { localStorage.setItem('patinteroLeaderboard', JSON.stringify(lb)); }
       function updatePlayerScore(name, levelsCompleted) {
@@ -319,6 +280,8 @@
         lb.sort((a,b) => b.levelsCompleted - a.levelsCompleted || a.name.localeCompare(b.name));
         saveLeaderboard(lb);
       }
+
+      // === FIX / ADDITION START ===
       function showLeaderboard() {
         const lb = getLeaderboard().slice(0, 10);
         const overlay = document.createElement('div');
@@ -329,20 +292,24 @@
         overlay.style.top = '50%';
         overlay.style.transform = 'translate(-50%, -50%)';
         overlay.style.zIndex = 120;
-        const list = lb.length ? lb.map((p,i)=>`<li>${i+1}. ${p.name} – ${p.levelsCompleted} levels</li>`).join('') : '<li>No scores yet!</li>';
+        const list = lb.length
+          ? lb.map((p,i)=>`<li>${i+1}. ${p.name} – ${p.levelsCompleted} levels</li>`).join('')
+          : '<li>No scores yet!</li>';
         overlay.innerHTML = `<h2>🏆 Leaderboard</h2><p>Top 10 players</p><ul style="text-align:left">${list}</ul><button id="closeLb">Close</button>`;
         stage.appendChild(overlay);
-        overlay.querySelector('#closeLb').addEventListener('click', ()=> overlay.remove());
+        overlay.querySelector('#closeLb').addEventListener('click', ()=>{
+          overlay.remove();
+          startOverlay.style.display = 'flex';
+          setStageBackground("patintero-bg.png");
+        });
       }
+      // === FIX / ADDITION END ===
       leaderboardBtn.addEventListener('click', showLeaderboard);
 
-      // --- Background switch helper + preload to avoid flicker ---
       function setStageBackground(src) {
         stage.style.background = `#223 url("${src}") center/cover no-repeat`;
       }
-      ["patinteroground.png"].forEach(src => { const img = new Image(); img.src = src; });
 
-      // Name prompt
       function askNameThenStart() {
         startOverlay.style.display = 'none';
         const o = document.createElement('div');
@@ -356,8 +323,7 @@
           <h2>Enter Player Name</h2>
           <p>We will show it on the leaderboard.</p>
           <input id="username" type="text" placeholder="Your name" maxlength="20" />
-          <button id="submitName">▶ START GAME</button>
-        `;
+          <button id="submitName">▶ START GAME</button>`;
         stage.appendChild(o);
         const submit = o.querySelector('#submitName');
         const input = o.querySelector('#username');
@@ -374,50 +340,33 @@
       }
       startBtn.addEventListener('click', askNameThenStart);
 
-      // Resize handling keeps things responsive
       const resizeObserver = new ResizeObserver(()=> {
         screenW = stage.clientWidth; screenH = stage.clientHeight;
-        // scale sprites based on viewport for laptop/desktop/tablet/phone
         const scale = Math.max(0.6, Math.min(1.4, Math.min(screenW, screenH) / 700));
         stage.style.setProperty('--scale', `scale(${scale})`);
         PLAYER_SIZE = Math.round(64 * scale);
-        // recompute lines (target Ys)
         linesY = [0.75, 0.60, 0.45, 0.30, 0.15].map(v => Math.round(screenH * v));
       });
       resizeObserver.observe(stage);
 
-      // === Game setup ===
       function initGame() {
-        // Switch background the moment the game starts
         setStageBackground("patinteroground.png");
-
-        // Ensure dims
         screenW = stage.clientWidth; screenH = stage.clientHeight;
         const scale = Math.max(0.6, Math.min(1.4, Math.min(screenW, screenH) / 700));
-        stage.style.setProperty('--scale', `scale(${scale})`);
         PLAYER_SIZE = Math.round(64 * scale);
-
-        // Lines (logical bands to cross; no visible finish line)
         linesY = [0.75, 0.60, 0.45, 0.30, 0.15].map(v => Math.round(screenH * v));
 
-        // Player
         player = document.createElement('div');
         player.className = 'Character';
         x = screenW * 0.5; y = screenH - 100;
         player.style.left = x + 'px';
         player.style.top = y + 'px';
-        player.setAttribute('facing','down');
-        player.innerHTML = `
-          <img class="Character_shadow pixelart" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/DemoRpgCharacterShadow.png" alt="shadow" />
-          <img class="Character_spritesheet pixelart face-down" src="AjFP5.png" alt="player" />
-        `;
+        player.innerHTML = `<img class="Character_shadow pixelart" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/DemoRpgCharacterShadow.png"/><img class="Character_spritesheet pixelart face-down" src="AjFP5.png"/>`;
         stage.appendChild(player);
 
-        // Level objects
         createBlockersForLevel(currentLevel);
         updatePlayerInfo();
 
-        // Input (keyboard)
         window.addEventListener('keydown', e => {
           if (gameEnded) return;
           const k = e.key.toLowerCase();
@@ -427,27 +376,35 @@
           if (k === 'arrowdown'  || k === 's') movePlayer(  0,  16, 'face-down');
         });
 
-        // Input (joystick)
+        // === FIX / ADDITION START ===
         joystick.addEventListener('touchstart', (e) => {
           if (gameEnded) return; e.preventDefault();
           joystickActive = true;
-          const rect = joystick.getBoundingClientRect();
-          joystickCenterX = rect.left + rect.width/2;
-          joystickCenterY = rect.top + rect.height/2;
-          updateKnob(e.touches[0].clientX, e.touches[0].clientY);
+
+          const touch = e.touches[0];
+          const jRect = joystick.getBoundingClientRect();
+          const newLeft = Math.max(0, touch.clientX - jRect.width / 2);
+          const newTop = Math.max(0, touch.clientY - jRect.height / 2);
+          joystick.style.left = newLeft + "px";
+          joystick.style.top = newTop + "px";
+          joystickCenterX = newLeft + jRect.width / 2;
+          joystickCenterY = newTop + jRect.height / 2;
+          updateKnob(touch.clientX, touch.clientY);
           startJoystickMovement();
         }, { passive: false });
+        // === FIX / ADDITION END ===
+
         joystick.addEventListener('touchmove', (e) => {
           if (!joystickActive || gameEnded) return; e.preventDefault();
           updateKnob(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: false });
+
         joystick.addEventListener('touchend', (e) => {
           if (gameEnded) return; e.preventDefault();
           joystickActive = false; currentDx = 0; currentDy = 0; knob.style.transform = 'translate(-50%, -50%)';
           stopJoystickMovement();
         }, { passive: false });
 
-        // Main tick
         gameLoop();
       }
 
@@ -455,183 +412,149 @@
         playerInfoBox.innerHTML = `${playerName || 'Player'}<br>Level ${currentLevel}/${maxLevel}`;
       }
 
-      function updateKnob(tx, ty) {
-        const dx = tx - joystickCenterX; const dy = ty - joystickCenterY;
-        const dist = Math.hypot(dx, dy); const max = 30;
-        if (dist > max) {
-          const a = Math.atan2(dy, dx); const cx = Math.cos(a)*max; const cy = Math.sin(a)*max;
-          knob.style.transform = `translate(-50%, -50%) translate(${cx}px, ${cy}px)`;
-          currentDx = cx/max; currentDy = cy/max;
-        } else {
-          knob.style.transform = `translate(-50%, -50%) translate(${dx}px, ${dy}px)`;
-          currentDx = dx/max; currentDy = dy/max;
-        }
+      function createBlockersForLevel(lvl) {
+        blockers.forEach(b => b.remove()); blockers = [];
+        const baseSpeed = SPEED_CONFIG.base + SPEED_CONFIG.perLevel * (lvl - 1);
+        const n = Math.min(5, 1 + lvl);
+        linesY.slice(0, n).forEach((yVal, idx) => {
+          const blocker = document.createElement('div');
+          blocker.className = 'Character';
+          blocker.innerHTML = `<img class="Character_shadow pixelart" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/DemoRpgCharacterShadow.png"/><img class="Character_spritesheet pixelart face-left" src="l2QCS.png"/>`;
+          blocker.style.left = `${(idx % 2 === 0 ? 50 : 450)}px`;
+          blocker.style.top = `${yVal}px`;
+          stage.appendChild(blocker);
+          blockers.push({
+            el: blocker, x: (idx % 2 === 0 ? 50 : 450), y: yVal,
+            dir: (idx % 2 === 0 ? 1 : -1),
+            speed: Math.min(SPEED_CONFIG.max, baseSpeed + (Math.random() - 0.5) * SPEED_CONFIG.variance)
+          });
+        });
       }
-      function startJoystickMovement(){ if (joystickInterval) clearInterval(joystickInterval); joystickInterval = setInterval(()=>{ if(!joystickActive||gameEnded){stopJoystickMovement();return;} moveBasedOnJoystick(); }, 120); }
-      function stopJoystickMovement(){ if (joystickInterval){ clearInterval(joystickInterval); joystickInterval=null; } }
-      function moveBasedOnJoystick(){ if(!joystickActive||gameEnded) return; const t=0.25; let dx=0,dy=0,dir='face-down'; if(Math.abs(currentDy)>Math.abs(currentDx)){ if(currentDy<-t){dy=-12;dir='face-up';} else if(currentDy>t){dy=12;dir='face-down';} } else { if(currentDx<-t){dx=-12;dir='face-left';} else if(currentDx>t){dx=12;dir='face-right';} } movePlayer(dx,dy,dir); }
 
-      function movePlayer(dx, dy, direction) {
-        if (gameEnded) return;
-        x += dx; y += dy;
-        // Bounds inside stage
-        x = Math.max(PLAYER_SIZE/2, Math.min(screenW - PLAYER_SIZE/2, x));
-        y = Math.max(PLAYER_SIZE/2, Math.min(screenH - PLAYER_SIZE/2, y));
-        const sprite = player.querySelector('.Character_spritesheet');
-        if (sprite) {
-          // Ensure we always apply the correct facing
-          sprite.className = `Character_spritesheet pixelart ${direction}`;
+      function moveBlockers() {
+        blockers.forEach(b => {
+          b.x += b.speed * b.dir;
+          if (b.x < 40 || b.x > screenW - 40) { b.dir *= -1; b.el.querySelector('.Character_spritesheet').className = `Character_spritesheet pixelart ${b.dir > 0 ? 'face-right' : 'face-left'}`; }
+          b.el.style.left = `${b.x}px`;
+        });
+      }
+
+      function checkCollision() {
+        const pr = player.getBoundingClientRect();
+        for (const b of blockers) {
+          const br = b.el.getBoundingClientRect();
+          if (Math.abs(pr.left - br.left) < PLAYER_SIZE * 0.4 && Math.abs(pr.top - br.top) < PLAYER_SIZE * 0.4) {
+            gameOver();
+            return true;
+          }
         }
+        return false;
+      }
+
+      function movePlayer(dx, dy, dir) {
+        x = Math.max(30, Math.min(screenW - 30, x + dx));
+        y = Math.max(30, Math.min(screenH - 30, y + dy));
         player.style.left = x + 'px';
         player.style.top = y + 'px';
+        player.querySelector('.Character_spritesheet').className = `Character_spritesheet pixelart ${dir}`;
+        if (y < 40) nextLevel();
       }
 
-      function showLevelComplete() {
-        toastMsg.textContent = `Complete: Level ${currentLevel}`;
-        levelToast.style.display = 'block';
+      function nextLevel() {
+        showToast(`Level ${currentLevel} Complete!`);
+        currentLevel++;
+        if (currentLevel > maxLevel) { gameWin(); return; }
+        updatePlayerScore(playerName, currentLevel - 1);
         setTimeout(() => {
-          levelToast.style.display = 'none';
-          currentLevel++;
-          x = screenW * 0.5; y = screenH - 100; player.style.left = x + 'px'; player.style.top = y + 'px';
-          if (currentLevel <= maxLevel) {
-            createBlockersForLevel(currentLevel);
-            updatePlayerInfo();
-            gameEnded = false;
-          } else {
-            updatePlayerScore(playerName, maxLevel);
-            showWinOverlay();
-          }
-        }, 1100);
+          blockers.forEach(b => b.el.remove()); blockers = [];
+          createBlockersForLevel(currentLevel);
+          y = screenH - 100;
+          updatePlayerInfo();
+        }, 1300);
       }
 
-      function showWinOverlay() {
-        const w = document.createElement('div');
-        w.className = 'overlay-card';
-        w.style.position = 'absolute'; w.style.left = '50%'; w.style.top = '50%'; w.style.transform = 'translate(-50%, -50%)'; w.style.zIndex = 130;
-        w.innerHTML = `
-          <h2>🎉 YOU WIN!</h2>
-          <p>You completed all ${maxLevel} levels!</p>
-          <button id="playAgainBtn">🔁 Play Again</button>
-          <button id="viewLbWin">🏆 View Leaderboard</button>
-        `;
-        stage.appendChild(w);
-        w.querySelector('#playAgainBtn').addEventListener('click', ()=> location.reload());
-        w.querySelector('#viewLbWin').addEventListener('click', ()=>{ w.remove(); showLeaderboard(); });
+      function showToast(msg) {
+        toastMsg.textContent = msg;
+        levelToast.style.display = 'block';
+        setTimeout(()=>{ levelToast.style.display='none'; }, 1200);
       }
 
-      function createBlockersForLevel(level) {
-        blockers.forEach(b => b.remove()); blockers = [];
-        const safeLevel = Math.max(1, Math.min(level, linesY.length));
-        for (let i = 0; i < safeLevel; i++) {
-          const blk = document.createElement('div');
-          blk.className = 'Character';
-          const spread = (i + 1) * 80;
-          let startX = (screenW * 0.5) + ((i % 2 === 0) ? -spread : spread);
-          startX = Math.max(32, Math.min(screenW - 32, startX));
-          blk.style.left = startX + 'px';
-          blk.style.top = linesY[i] + 'px';
+      function gameOver() {
+        gameEnded = true;
+        updatePlayerScore(playerName, currentLevel - 1);
+        alert(`Game Over!\nYou completed ${currentLevel - 1} level(s).`);
+        resetToHome();
+      }
 
-          // Level-based speed with tiny variance (gentle ramp 1→5)
-          const levelSpeed = Math.min(
-            SPEED_CONFIG.max,
-            SPEED_CONFIG.base + (Math.max(1, level) - 1) * SPEED_CONFIG.perLevel
-          );
-          const withVariance = levelSpeed + (Math.random() - 0.5) * SPEED_CONFIG.variance;
-          blk.dataset.speed = Math.max(1.2, withVariance); // prevent too low
+      function gameWin() {
+        gameEnded = true;
+        updatePlayerScore(playerName, maxLevel);
+        alert(`🎉 Congratulations ${playerName}! You finished all ${maxLevel} levels!`);
+        resetToHome();
+      }
 
-          blk.dataset.phase = Math.random() * Math.PI * 2;
-          blk.dataset.amp = 28 + (i * 6);
+      function resetToHome() {
+        player?.remove();
+        blockers.forEach(b => b.el.remove());
+        blockers = [];
+        startOverlay.style.display = 'flex';
+        setStageBackground("patintero-bg.png");
+        gameEnded = false;
+        currentLevel = 1;
+        updatePlayerInfo();
+      }
 
-          blk.innerHTML = `
-            <img class="Character_shadow pixelart" src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/DemoRpgCharacterShadow.png" alt="shadow" />
-            <img class="Character_spritesheet pixelart face-down" src="blocker.png" alt="blocker" />
-          `;
-          stage.appendChild(blk);
-          blockers.push(blk);
+      function updateKnob(tX, tY) {
+        const dx = tX - joystickCenterX;
+        const dy = tY - joystickCenterY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = 50;
+        const angle = Math.atan2(dy, dx);
+        const limited = Math.min(maxDist, dist);
+        const offsetX = Math.cos(angle) * limited;
+        const offsetY = Math.sin(angle) * limited;
+        knob.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+        currentDx = dx / maxDist;
+        currentDy = dy / maxDist;
+      }
+
+      // === FIX / ADDITION START ===
+      function startJoystickMovement() {
+        if (joystickInterval) clearInterval(joystickInterval);
+        joystickInterval = setInterval(() => {
+          if (!joystickActive || gameEnded) { stopJoystickMovement(); return; }
+          moveBasedOnJoystick();
+        }, 60);
+      }
+
+      function stopJoystickMovement() {
+        clearInterval(joystickInterval);
+        joystickInterval = null;
+      }
+
+      function moveBasedOnJoystick() {
+        if (!joystickActive || gameEnded) return;
+        const threshold = 0.15;
+        const moveSpeed = 18;
+        let dx = 0, dy = 0, dir = 'face-down';
+        if (Math.abs(currentDy) > Math.abs(currentDx)) {
+          if (currentDy < -threshold) { dy = -moveSpeed; dir = 'face-up'; }
+          else if (currentDy > threshold) { dy = moveSpeed; dir = 'face-down'; }
+        } else {
+          if (currentDx < -threshold) { dx = -moveSpeed; dir = 'face-left'; }
+          else if (currentDx > threshold) { dx = moveSpeed; dir = 'face-right'; }
         }
+        movePlayer(dx, dy, dir);
       }
+      // === FIX / ADDITION END ===
 
-      // Main game tick: blockers movement, collisions, crossing detection
       function gameLoop() {
-        const tick = () => {
-          if (gameEnded) { requestAnimationFrame(tick); return; }
-
-          // Cross check (no visible finish line; uses logical band)
-          const targetLineY = linesY[currentLevel - 1];
-          if (y <= targetLineY) { 
-            gameEnded = true; 
-            showLevelComplete(); 
-            requestAnimationFrame(tick); 
-            return; 
-          }
-
-          // Blockers
-          let tagged = false;
-          blockers.forEach((blk, index) => {
-            let bx = parseFloat(blk.style.left) || (screenW * 0.5);
-            const baseY = linesY[index] || (screenH * 0.5);
-            let phase = parseFloat(blk.dataset.phase) || 0;
-            let amp = parseFloat(blk.dataset.amp) || 40;
-            let speed = parseFloat(blk.dataset.speed) || 2.0;
-
-            const speedFactor = isTouch ? 0.6 : 1; // phones a bit slower for fairness
-            const step = Math.max(1, Math.round(speed * speedFactor)); // gentle speed
-
-            const dx = x - bx; // chase horizontally
-            if (Math.abs(dx) > step) bx += step * Math.sign(dx); else bx += dx;
-            bx = Math.max(32, Math.min(screenW - 32, bx));
-
-            phase += 0.08 + (index * 0.02);
-            let vOff = Math.sin(phase + (Date.now() / 400)) * (amp * 0.25);
-
-            const half = 16; // blocker half-size for clamp
-            let upper = screenH; let lower = 0;
-            if (index > 0) upper = linesY[index - 1];
-            if (index < linesY.length - 1) lower = linesY[index + 1];
-            const maxV = Math.min(Math.abs(baseY - upper), Math.abs(baseY - lower)) / 2 - half;
-            vOff = Math.max(-maxV, Math.min(maxV, vOff));
-            blk.dataset.phase = phase;
-
-            const by = baseY + vOff;
-            blk.style.left = bx + 'px';
-            blk.style.top = by + 'px';
-
-            // face toward player (blockers always look where they're going)
-            const dy = y - by; const adx = Math.abs(dx); const ady = Math.abs(dy);
-            const face = (ady > adx) ? (dy > 0 ? 'face-down' : 'face-up') : (dx > 0 ? 'face-right' : 'face-left');
-            const s = blk.querySelector('.Character_spritesheet');
-            if (s) s.className = `Character_spritesheet pixelart ${face}`;
-
-            // collision (simple distance threshold)
-            if (Math.abs(x - bx) < 42 && Math.abs(y - by) < 42) tagged = true;
-          });
-
-          if (tagged) {
-            gameEnded = true;
-            updatePlayerScore(playerName, Math.max(0, currentLevel - 1));
-            const over = document.createElement('div');
-            over.className = 'overlay-card';
-            over.style.position = 'absolute'; over.style.left = '50%'; over.style.top = '50%'; over.style.transform = 'translate(-50%, -50%)'; over.style.zIndex = 120;
-            over.id = 'gameOverOverlay';
-            over.innerHTML = `
-              <h2>😵 GAME OVER!</h2>
-              <p>You were tagged at Level ${currentLevel}! (Completed: ${Math.max(0, currentLevel-1)} levels)</p>
-              <button id="restartBtn">🔁 Restart</button>
-              <button id="viewLbAfter">🏆 View Leaderboard</button>
-            `;
-            stage.appendChild(over);
-            over.querySelector('#restartBtn').addEventListener('click', ()=> location.reload());
-            over.querySelector('#viewLbAfter').addEventListener('click', ()=>{ over.remove(); showLeaderboard(); });
-          }
-
-          requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+        if (!gameEnded) {
+          moveBlockers();
+          checkCollision();
+        }
+        requestAnimationFrame(gameLoop);
       }
-
-      // Saved name hint (optional)
-      const saved = JSON.parse(localStorage.getItem('patinteroPlayer') || 'null');
-      if (saved && saved.name) { /* could prefill later */ }
     });
   </script>
 </body>
